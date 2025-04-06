@@ -1,6 +1,6 @@
 const mc = require('minecraftstatuspinger')
 const express = require('express')
-const app = express()
+const router = express.Router()
 
 let css = `
     <style>
@@ -11,12 +11,12 @@ let css = `
     </style>
 `
 
-app.get('/', async (req, res) => {
-    let html = `<h1>Nothing to see here...</h1>`
+router.get('/', async (req, res) => {
+    let html = `<h1>Minecraft Homepage</h1>`
     res.send(html + css);
 })
 
-app.get('/mc/:ip', async (req, res) => {
+router.get('/:ip', async (req, res) => {
     let html = ``
     try {
         let ping = await mc.lookup({ host: req.params.ip });
@@ -35,5 +35,4 @@ app.get('/mc/:ip', async (req, res) => {
     res.send(html + css);
 })
 
-var server = app.listen(3000);
-server.setTimeout(10000);
+module.exports = router
