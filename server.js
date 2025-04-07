@@ -1,5 +1,5 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const port = process.env.PORT || 3000;
 
 let css = `
@@ -9,18 +9,20 @@ let css = `
             color: white;
         }
     </style>
-`
+`;
 
 app.get('/', async (req, res) => {
-    let html = `<h1>Nothing to see here...</h1>`
+    let html = `<h1>Nothing to see here...</h1>`;
     res.send(html + css);
-})
+});
 
-const mcRouter = require('./routes/mc.js')
+const mcRouter = require('./routes/mc.js');
+const culversRouter = require('./routes/culvers.js');
 
-app.use('/mc', mcRouter)
+app.use('/mc', mcRouter);
+app.use('/culvers', culversRouter);
 
-var server = app.listen(port, () => {
-    console.log(`API listening on port ${port}`)
-})
+const server = app.listen(port, () => {
+    console.log(`API listening on port ${port}`);
+});
 server.setTimeout(15000);

@@ -1,6 +1,6 @@
-const mc = require('minecraftstatuspinger')
-const express = require('express')
-const router = express.Router()
+const mc = require('minecraftstatuspinger');
+const express = require('express');
+const router = express.Router();
 
 let css = `
     <style>
@@ -9,15 +9,15 @@ let css = `
             color: white;
         }
     </style>
-`
+`;
 
 router.get('/', async (req, res) => {
-    let html = `<h1>Minecraft Homepage</h1>`
+    let html = `<h1>Minecraft Homepage</h1>`;
     res.send(html + css);
-})
+});
 
 router.get('/:ip', async (req, res) => {
-    let html = ``
+    let html = ``;
     try {
         let ping = await mc.lookup({ host: req.params.ip });
         html = `
@@ -25,14 +25,14 @@ router.get('/:ip', async (req, res) => {
             <p>Latency: ${ping.latency}ms</p>
             <p>MOTD: ${ping?.status?.description}</p>
             <p>Players: ${ping?.status?.players.online}/${ping?.status?.players.max}</p>
-        `
+        `;
     } catch (error) {
         html = `
             <h1>Pinging server ${req.params.ip}</h1>
             <p>${error}</p>
-        `
+        `;
     }
     res.send(html + css);
-})
+});
 
-module.exports = router
+module.exports = router;
