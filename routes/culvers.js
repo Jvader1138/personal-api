@@ -48,10 +48,10 @@ function getLocationData(array) {
     let data = {};
     let dates = array[0].slice(-5);
     let flavors = [];
-    let index = array[1].indexOf("");
+    let index = array[1].indexOf('');
     while (index !== -1) {
         flavors.push(array[1][index + 1]);
-        index = array[1].indexOf("", index + 1);
+        index = array[1].indexOf('', index + 1);
     }
     for (let i = 0; i < flavors.length; i++) {
         data[dates[i]] = flavors[i];
@@ -63,7 +63,7 @@ function getLocationData(array) {
 router.get('/schedule', async (req, res) => {
     const locations = req.query.locations.split(',');
     const selectors = ['h3', 'a'];
-    const scheduleData = {};
+    let scheduleData = {};
 
     try {
         // Use Promise.all to wait for all scrape operations to finish
@@ -83,6 +83,53 @@ router.get('/schedule', async (req, res) => {
     } catch (error) {
         // If any error happens, respond with 500 status
         res.sendStatus(500);
+    }
+});
+
+// culvers/search?name=
+router.get('/search', async (req, res) => {
+    const name = req.query.name;
+    const selectors = ['h3', 'a'];
+    let locData = {};
+
+    try {
+        const geoLoc = await fetchHTML('https://geocoding-api.open-meteo.com/v1/search?name=' + name + '&count=1&language=en&format=json&countryCode=US');
+        if (!('results' in geoLoc)) {
+            locData['error'] = true;
+            locData['reason'] = 'Cannot find ZIP Code.';
+            throw error;
+        }
+
+        const lat = geoLoc.results[0]?.latitude;
+        const long = geoLoc.results[0]?.longitude;
+        const nearbyCulvers = await fetchHTML('https://www.culvers.com/api/locator/getLocations?lat=' + lat + '&long=' + long + '&radius=16093&limit=100&layer=');
+        if (nearbyCulvers?.isSuccessful == false || nearbyCulvers?.data?.geofences.length == 0) {
+            locData['error'] = true;
+            locData['reason'] = 'Cannot find nearby Culver\'s locations.';
+            throw error;
+        }
+
+        // Use Promise.all to wait for all scrape operations to finish
+        await Promise.all(nearbyCulvers?.data?.geofences.map(async element => {
+            const slug = element.metadata.slug;
+            const url = 'https://www.culvers.com/restaurants/' + slug + '?tab=current';
+            try {
+                const data = await scrape(url, selectors);
+                locData[slug] = getLocationData(data);
+            } catch (error) {
+                console.error(error);
+                let locData = {};
+                locData['error'] = true;
+                locData['reason'] = error.toString();
+                throw error; // rethrow to be handled by the outer catch
+            }
+        }));
+
+        // After all data has been scraped, send the response
+        res.send(locData);
+    } catch (error) {
+        // If any error happens, respond with 500 status
+        res.status(400).send(locData);
     }
 });
 
