@@ -1,6 +1,9 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(cors());
 
 let css = `
     <style>
@@ -25,4 +28,4 @@ app.use('/culvers', culversRouter);
 const server = app.listen(port, () => {
     console.log(`API listening on port ${port}`);
 });
-server.setTimeout(15000);
+server.setTimeout(15000); 
