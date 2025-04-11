@@ -90,7 +90,7 @@ router.get('/schedule', async (req, res) => {
 router.get('/search', async (req, res) => {
     const name = req.query.name;
     const selectors = ['h3', 'a'];
-    let locData = {};
+    let locData = {'results': []};
 
     try {
         const geoLoc = await fetchHTML('https://geocoding-api.open-meteo.com/v1/search?name=' + name + '&count=1&language=en&format=json&countryCode=US');
@@ -114,8 +114,12 @@ router.get('/search', async (req, res) => {
             const slug = element.metadata.slug;
             const url = 'https://www.culvers.com/restaurants/' + slug + '?tab=current';
             try {
+                let loc = {
+                    'slug': slug,
+                };
                 const data = await scrape(url, selectors);
-                locData[slug] = getLocationData(data);
+                loc['flavors'] = (getLocationData(data));
+                locData['results'].push(loc);
             } catch (error) {
                 console.error(error);
                 let locData = {};
