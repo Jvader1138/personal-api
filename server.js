@@ -15,8 +15,8 @@ let css = `
 `;
 
 app.get('/', async (req, res) => {
-    let html = `<h1>Nothing to see here...</h1>`;
-    res.send(html + css);
+    let response = 'API Online';
+    res.status(200).send(response);
 });
 
 const mcRouter = require('./routes/mc.js');
