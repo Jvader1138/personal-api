@@ -86,11 +86,15 @@ router.get('/schedule', async (req, res) => {
     }
 });
 
-// culvers/search?name=
+// culvers/search?name=&?today=
 router.get('/search', async (req, res) => {
     const name = req.query.name;
+    const today = req.query.today;
+    let isToday = false;
     const selectors = ['h3', 'a'];
     let locData = {'results': []};
+
+    if (today.toLowerCase() === 'true') isToday = true;
 
     try {
         const geoLoc = await fetchHTML('https://geocoding-api.open-meteo.com/v1/search?name=' + name + '&count=1&language=en&format=json&countryCode=US');
@@ -109,26 +113,40 @@ router.get('/search', async (req, res) => {
             throw error;
         }
 
-        // Use Promise.all to wait for all scrape operations to finish
-        await Promise.all(nearbyCulvers?.data?.geofences.map(async element => {
-            const slug = element.metadata.slug;
-            const url = 'https://www.culvers.com/restaurants/' + slug + '?tab=current';
-            try {
+        if (isToday) {
+            nearbyCulvers?.data?.geofences.forEach(location => {
                 let loc = {
-                    'slug': slug,
+                    'slug': location.metadata.slug,
+                    'description': location.description,
+                    'flavor': location.metadata.flavorOfDayName,
+                    'flavors': []
                 };
-                const data = await scrape(url, selectors);
-                loc['flavors'] = (getLocationData(data));
                 locData['results'].push(loc);
-            } catch (error) {
-                console.error(error);
-                let locData = {};
-                locData['error'] = true;
-                locData['reason'] = error.toString();
-                throw error; // rethrow to be handled by the outer catch
-            }
-        }));
-
+            });
+        } else {
+            // Use Promise.all to wait for all scrape operations to finish
+            await Promise.all(nearbyCulvers?.data?.geofences.map(async element => {
+                const slug = element.metadata.slug;
+                const url = 'https://www.culvers.com/restaurants/' + slug + '?tab=current';
+                try {
+                    let loc = {
+                        'slug': slug,
+                        'description': element.description,
+                        'flavor': element.metadata.flavorOfDayName
+                    };
+                    const data = await scrape(url, selectors);
+                    loc['flavors'] = (getLocationData(data));
+                    locData['results'].push(loc);
+                } catch (error) {
+                    console.error(error);
+                    let locData = {};
+                    locData['error'] = true;
+                    locData['reason'] = error.toString();
+                    throw error; // rethrow to be handled by the outer catch
+                }
+            }));
+        }
+        
         // After all data has been scraped, send the response
         res.send(locData);
     } catch (error) {
